@@ -1,0 +1,46 @@
+{
+  "name": "@cordprotocol/mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Cord Protocol — post-quantum cryptographic identity for AI agents",
+  "keywords": [
+    "mcp",
+    "cord-protocol",
+    "post-quantum",
+    "cryptography",
+    "ai-agents",
+    "identity",
+    "credentials"
+  ],
+  "homepage": "https://cordprotocol.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cordprotocol/mcp"
+  },
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "cordprotocol-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
