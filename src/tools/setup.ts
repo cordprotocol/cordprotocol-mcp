@@ -12,6 +12,14 @@ export const SetupProjectInputSchema = z.object({
     .array(z.string().min(1))
     .min(1)
     .describe("Permission scopes the agent needs (e.g. ['market.read', 'files.write'])"),
+  did_format: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe(
+      "If true, generate starter code using W3C Verifiable Credentials " +
+        "(issueVerifiableCredential) instead of native cord_v1 format"
+    ),
 });
 
 export type SetupProjectInput = z.infer<typeof SetupProjectInputSchema>;
@@ -171,8 +179,78 @@ def verify_agent_credential(token: str) -> bool:
     return response.json()["valid"]`;
 }
 
+function buildTsStarterDID(agentId: string, permissions: string[]): string {
+  return `// Load from environment — never hard-code keys
+const CORD_PRIVATE_KEY = process.env.CORD_PRIVATE_KEY!;
+
+// Issue a W3C Verifiable Credential for this agent session
+async function getAgentCredential(): Promise<object> {
+  const response = await fetch("https://api.cordprotocol.dev/v1/issue-vc", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      agentId: "${agentId}",
+      issuedTo: process.env.ENVIRONMENT ?? "development",
+      permissions: ${JSON.stringify(permissions)},
+      expiresIn: "1h",
+      privateKey: CORD_PRIVATE_KEY,
+    }),
+  });
+  const { verifiableCredential } = await response.json() as { verifiableCredential: object };
+  return verifiableCredential;
+}
+
+// Verify a W3C VC received from another agent
+async function verifyAgentCredential(vc: object): Promise<boolean> {
+  const response = await fetch("https://api.cordprotocol.dev/v1/verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ credential: JSON.stringify(vc) }),
+  });
+  const result = await response.json() as { valid: boolean };
+  return result.valid;
+}
+
+export { getAgentCredential, verifyAgentCredential };`;
+}
+
+function buildPyStarterDID(agentId: string, permissions: string[]): string {
+  const permsStr = JSON.stringify(permissions);
+  return `import os
+import json
+import requests
+
+CORD_PRIVATE_KEY = os.environ["CORD_PRIVATE_KEY"]
+
+
+def get_agent_credential() -> dict:
+    """Issue a W3C Verifiable Credential for this agent session."""
+    response = requests.post(
+        "https://api.cordprotocol.dev/v1/issue-vc",
+        json={
+            "agentId": "${agentId}",
+            "issuedTo": os.environ.get("ENVIRONMENT", "development"),
+            "permissions": ${permsStr},
+            "expiresIn": "1h",
+            "privateKey": CORD_PRIVATE_KEY,
+        },
+    )
+    response.raise_for_status()
+    return response.json()["verifiableCredential"]
+
+
+def verify_agent_credential(vc: dict) -> bool:
+    """Verify a W3C VC received from another agent."""
+    response = requests.post(
+        "https://api.cordprotocol.dev/v1/verify",
+        json={"credential": json.dumps(vc)},
+    )
+    response.raise_for_status()
+    return response.json()["valid"]`;
+}
+
 export function setupProject(input: SetupProjectInput): SetupProjectResult {
-  const { language, agentId, permissions } = input;
+  const { language, agentId, permissions, did_format } = input;
 
   const isTs = language === "typescript";
 
@@ -181,8 +259,8 @@ export function setupProject(input: SetupProjectInput): SetupProjectResult {
     : "pip install cordprotocol";
 
   const starterCode = isTs
-    ? buildTsStarter(agentId, permissions)
-    : buildPyStarter(agentId, permissions);
+    ? (did_format ? buildTsStarterDID(agentId, permissions) : buildTsStarter(agentId, permissions))
+    : (did_format ? buildPyStarterDID(agentId, permissions) : buildPyStarter(agentId, permissions));
 
   const envVars = [
     "# Cord Protocol — add to your .env file",

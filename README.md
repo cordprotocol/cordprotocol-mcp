@@ -1,6 +1,6 @@
 # @cordprotocol/mcp
 
-MCP server for [Cord Protocol](https://cordprotocol.dev) — post-quantum cryptographic identity for AI agents.
+MCP server for [Cord Protocol](https://cordprotocol.dev) — post-quantum cryptographic identity for AI agents. **v0.2.0** adds W3C DID and Verifiable Credential support.
 
 Connect this server to Claude Code or Cursor and Claude gains native ability to generate agent keypairs, issue credentials, verify them, and check permissions — all cryptographically, without any network dependency.
 
@@ -29,13 +29,13 @@ Add to `~/.claude/claude_desktop_config.json`:
   "mcpServers": {
     "cordprotocol": {
       "command": "npx",
-      "args": ["-y", "@cordprotocol/mcp"]
+      "args": ["-y", "@cordprotocol/mcp@latest"]
     }
   }
 }
 ```
 
-Restart Claude Code. The six `cord_*` tools will be available immediately.
+Restart Claude Code. All nine `cord_*` tools will be available immediately.
 
 ### Cursor
 
@@ -46,7 +46,7 @@ Add to `.cursor/mcp.json` in your project (or the global Cursor MCP config):
   "mcpServers": {
     "cordprotocol": {
       "command": "npx",
-      "args": ["-y", "@cordprotocol/mcp"]
+      "args": ["-y", "@cordprotocol/mcp@latest"]
     }
   }
 }
@@ -62,6 +62,67 @@ cordprotocol-mcp
 ---
 
 ## Tools
+
+### `cord_did_generate` — Generate a W3C DID
+
+Generates a W3C Decentralized Identifier and DID Document for an AI agent using the did:web method.
+
+**Example prompts:**
+- *"Generate a DID for my trading agent"*
+- *"Create a W3C DID for agent analytics-bot on my domain"*
+- *"Set up a decentralized identifier for my agent"*
+
+**Input:**
+```json
+{
+  "agentId": "trading-agent-v2",
+  "domain": "mycompany.com"
+}
+```
+
+**Output:** The DID string (`did:web:mycompany.com:agents:trading-agent-v2`), a complete W3C DID Document ready to host, the resolve URL, and an explanation of what to do next.
+
+---
+
+### `cord_issue_vc` — Issue a W3C Verifiable Credential
+
+Issues a W3C Verifiable Credential for an AI agent — interoperable with any DID-aware system.
+
+**Example prompts:**
+- *"Issue a W3C Verifiable Credential for my trading agent"*
+- *"Give my agent a VC with market.read and market.write permissions"*
+- *"Issue a DID-compatible credential that works with enterprise identity systems"*
+
+**Input:**
+```json
+{
+  "agentId": "trading-agent-v2",
+  "issuedTo": "production",
+  "permissions": ["market.read", "market.write"],
+  "expiresIn": "24h",
+  "privateKey": "<from cord_keygen>",
+  "issuerDID": "did:web:mycompany.com",
+  "domain": "mycompany.com"
+}
+```
+
+**Output:** A complete W3C Verifiable Credential JSON object, the agent's DID, and a list of compatible systems (Veramo, SpruceID, DIF Universal Resolver, etc.).
+
+---
+
+### `cord_explain_did` — Learn about DIDs and Verifiable Credentials
+
+Returns detailed explanations of W3C DID and VC concepts, and when to use them vs the native Cord format.
+
+**Example prompts:**
+- *"What's the difference between DID format and simple Cord format?"*
+- *"Explain W3C Verifiable Credentials for AI agents"*
+- *"How do I host a DID Document?"*
+- *"When should I use cord_issue vs cord_issue_vc?"*
+
+**Topics:** `overview`, `did-document`, `did-vs-cord`, `verifiable-credentials`, `resolution`, `getting-started`
+
+---
 
 ### `cord_keygen` — Generate a keypair
 
@@ -107,16 +168,21 @@ Signs and issues a cryptographic identity credential for an agent.
 
 ### `cord_verify` — Verify a credential
 
-Checks an agent credential's Ed25519 signature, expiry, and schema validity — no network call needed.
+Checks an agent credential's Ed25519 signature, expiry, and schema validity — no network call needed. Auto-detects both the native `cord_v1` format and W3C Verifiable Credential JSON format.
 
 **Example prompts:**
 - *"Verify this agent credential"*
 - *"Is this Cord token still valid?"*
-- *"Check if this credential has expired"*
+- *"Check if this W3C VC has expired"*
 
-**Input:**
+**Input (native format):**
 ```json
 { "credential": "cord_v1.eyJhZ..." }
+```
+
+**Input (W3C VC format):**
+```json
+{ "credential": "{\"@context\":[\"https://www.w3.org/2018/credentials/v1\",...],\"type\":[...],...}" }
 ```
 
 **Output:** Pass/fail with agentId, permissions, expiry, and the failure reason if invalid.
@@ -154,7 +220,7 @@ Returns a detailed explanation of Cord Protocol concepts. Claude uses this to an
 - *"How does Cord Protocol compare to OAuth?"*
 - *"Explain the post-quantum part"*
 
-**Topics:** `overview`, `post-quantum`, `permissions`, `attestation`, `vs-oauth`, `getting-started`
+**Topics:** `overview`, `post-quantum`, `permissions`, `attestation`, `vs-oauth`, `getting-started`, `did`, `whats-new`
 
 **Input:**
 ```json

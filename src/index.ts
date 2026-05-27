@@ -9,10 +9,13 @@ import { verifyCredential, VerifyInputSchema } from "./tools/verify.js";
 import { checkPermission, CheckPermissionInputSchema } from "./tools/permissions.js";
 import { explain, ExplainInputSchema } from "./tools/explain.js";
 import { setupProject, SetupProjectInputSchema } from "./tools/setup.js";
+import { generateDID, DIDGenerateInputSchema } from "./tools/did.js";
+import { issueVerifiableCredential, IssueVCInputSchema } from "./tools/issue_vc.js";
+import { explainDID, ExplainDIDInputSchema } from "./tools/explain_did.js";
 
 const server = new McpServer({
   name: "cordprotocol",
-  version: "0.1.0",
+  version: "0.2.0",
 });
 
 // ── cord_keygen ────────────────────────────────────────────────────────────
@@ -152,7 +155,7 @@ server.tool(
 
 server.tool(
   "cord_explain",
-  'Explain what Cord Protocol is and when to use it. Topics: "overview", "post-quantum", "permissions", "attestation", "vs-oauth", "getting-started"',
+  'Explain what Cord Protocol is and when to use it. Topics: "overview", "post-quantum", "permissions", "attestation", "vs-oauth", "getting-started", "did", "whats-new"',
   ExplainInputSchema.shape,
   async (input) => {
     try {
@@ -194,6 +197,88 @@ server.tool(
       };
     } catch (err) {
       return errorResponse("cord_setup_project", err);
+    }
+  }
+);
+
+// ── cord_did_generate ──────────────────────────────────────────────────────
+
+server.tool(
+  "cord_did_generate",
+  "Generate a W3C DID (Decentralized Identifier) for an AI agent using Cord Protocol",
+  DIDGenerateInputSchema.shape,
+  async (input) => {
+    try {
+      const result = generateDID(input);
+      return {
+        content: [
+          {
+            type: "text",
+            text: result.formatted,
+          },
+          {
+            type: "text",
+            text: JSON.stringify({
+              did: result.did,
+              didDocument: result.didDocument,
+              resolveUrl: result.resolveUrl,
+              explanation: result.explanation,
+            }),
+          },
+        ],
+      };
+    } catch (err) {
+      return errorResponse("cord_did_generate", err);
+    }
+  }
+);
+
+// ── cord_issue_vc ──────────────────────────────────────────────────────────
+
+server.tool(
+  "cord_issue_vc",
+  "Issue a W3C Verifiable Credential for an AI agent — interoperable with any DID-aware system",
+  IssueVCInputSchema.shape,
+  async (input) => {
+    try {
+      const result = issueVerifiableCredential(input);
+      return {
+        content: [
+          {
+            type: "text",
+            text: result.formatted,
+          },
+          {
+            type: "text",
+            text: JSON.stringify({
+              verifiableCredential: result.verifiableCredential,
+              agentDID: result.agentDID,
+              format: result.format,
+              compatible: result.compatible,
+            }),
+          },
+        ],
+      };
+    } catch (err) {
+      return errorResponse("cord_issue_vc", err);
+    }
+  }
+);
+
+// ── cord_explain_did ───────────────────────────────────────────────────────
+
+server.tool(
+  "cord_explain_did",
+  'Explain W3C DIDs and Verifiable Credentials for AI agents. Topics: "overview", "did-document", "did-vs-cord", "verifiable-credentials", "resolution", "getting-started"',
+  ExplainDIDInputSchema.shape,
+  async (input) => {
+    try {
+      const text = explainDID(input);
+      return {
+        content: [{ type: "text", text }],
+      };
+    } catch (err) {
+      return errorResponse("cord_explain_did", err);
     }
   }
 );

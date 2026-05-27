@@ -9,12 +9,14 @@ export const ExplainInputSchema = z.object({
       "attestation",
       "vs-oauth",
       "getting-started",
+      "did",
+      "whats-new",
     ])
     .optional()
     .default("overview")
     .describe(
       'Topic to explain. Options: "overview", "post-quantum", "permissions", ' +
-        '"attestation", "vs-oauth", "getting-started"'
+        '"attestation", "vs-oauth", "getting-started", "did", "whats-new"'
     ),
 });
 
@@ -224,6 +226,87 @@ Weaknesses:
 - Agent calls another agent or service autonomously → Cord Protocol
 - You need offline verification without a token introspection endpoint → Cord Protocol
 - You need post-quantum security → Cord Protocol
+`.trim(),
+
+  did: `
+# W3C DIDs and Verifiable Credentials in Cord Protocol
+
+Cord Protocol v0.2.0 adds full support for W3C Decentralized Identifiers (DIDs)
+and Verifiable Credentials (VCs) alongside the native cord_v1 format.
+
+## New tools
+
+- **cord_did_generate** — generates a did:web DID and DID Document for your agent
+- **cord_issue_vc** — issues a W3C Verifiable Credential (interoperable with any
+  DID-aware system: Veramo, SpruceID, enterprise platforms)
+- **cord_explain_did** — detailed explanations of DIDs, VCs, did:web resolution,
+  and when to use W3C format vs native Cord format
+
+## Two credential formats
+
+**Native (cord_v1):**
+  cord_v1.<base64url(payload)>.<base64url(signature)>
+  - Compact, self-contained token
+  - No hosting required
+  - Use for simple setups and services you fully control
+
+**W3C Verifiable Credential:**
+  JSON-LD object with @context, type, issuer, credentialSubject, proof
+  - Interoperable with enterprise identity systems
+  - Requires hosting a did.json file (for did:web)
+  - Use when enterprise, compliance, or cross-org interoperability is needed
+
+Both formats use Ed25519 cryptography and support offline verification.
+cord_verify auto-detects the format and verifies either one.
+
+## When to suggest W3C VC format
+
+Suggest cord_issue_vc (over cord_issue) when the developer mentions:
+- Enterprise systems or enterprise integration
+- Compliance, regulatory requirements, or audit trails
+- Interoperability with external organizations
+- Existing DID infrastructure or W3C VC tooling
+
+Use cord_keygen + cord_issue for simpler setups.
+`.trim(),
+
+  "whats-new": `
+# What's New in Cord Protocol
+
+## v0.2.0 — MCP Server (current)
+
+- **W3C DID support** — cord_did_generate, cord_issue_vc, cord_explain_did
+- cord_verify now auto-detects and verifies W3C Verifiable Credentials
+- cord_setup_project adds DID/VC starter code option (did_format: true)
+- cord_explain adds "did" and "whats-new" topics
+
+## TypeScript SDK — v0.4.0
+
+The @cordprotocol/sdk TypeScript package includes:
+- issueCredential() — native cord_v1 format
+- issueVerifiableCredential() — W3C VC format
+- verifyCredential() — verifies both formats
+- checkPermission() — wildcard-aware scope checking
+- Full TypeScript types for all credential structures
+- 385+ tests across unit, integration, and edge-case suites
+
+## Python SDK — v0.3.0
+
+The cordprotocol Python package includes:
+- cord.issue_credential() — native cord_v1 format
+- cord.issue_verifiable_credential() — W3C VC format
+- cord.verify_credential() — verifies both formats
+- cord.check_permission() — wildcard scope matching
+- Async support with asyncio
+- 385+ tests mirroring the TypeScript suite
+
+## Roadmap
+
+- ML-DSA (CRYSTALS-Dilithium) post-quantum signatures — planned for v0.5.0
+- did:key and did:ion method support — in development
+- Credential revocation lists — in design
+
+Visit https://cordprotocol.dev for the full changelog.
 `.trim(),
 
   "getting-started": `
